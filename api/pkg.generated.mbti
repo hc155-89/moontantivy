@@ -1,11 +1,43 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "hc155-89/moontantivy/api"
 
+import {
+  "hc155-89/moontantivy",
+  "hc155-89/moontantivy/index",
+  "hc155-89/moontantivy/score",
+  "hc155-89/moontantivy/storage",
+  "hc155-89/moontantivy/tokenizer",
+  "moonbitlang/core/debug",
+  "moonbitlang/x/fs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+pub struct SearchEngine {
+  index : @index.InvertedIndex
+  tokenizer : @tokenizer.StandardTokenizer
+  mut config : @score.BM25Config
+}
+pub fn SearchEngine::add_document(Self, @moontantivy.Document) -> Unit
+pub fn SearchEngine::load(String) -> Self raise @storage.StorageError
+pub fn SearchEngine::new() -> Self
+pub fn SearchEngine::num_docs(Self) -> Int32
+pub fn SearchEngine::remove_document(Self, Int32) -> Bool
+pub fn SearchEngine::save(Self, String) -> Unit raise @fs.IOError
+pub fn SearchEngine::search(Self, String, Int32) -> Array[SearchResult]
+pub fn SearchEngine::set_bm25(Self, @score.BM25Config) -> Self
+
+pub struct SearchResult {
+  doc_id : Int32
+  title : String
+  score : Double
+} derive(Eq, @debug.Debug)
+pub fn SearchResult::equal(Self, Self) -> Bool
+pub fn SearchResult::not_equal(Self, Self) -> Bool
+pub fn SearchResult::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

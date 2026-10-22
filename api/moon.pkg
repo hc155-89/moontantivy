@@ -1,1 +1,15 @@
 // api 包配置。作为门面整合其余子包。
+//
+// 依赖方向（单向，无环）：
+//   根包 Document <- index <- query / score <- api
+//   storage 只依赖 index 与 json/fs，同样被 api 复用。
+import {
+  "hc155-89/moontantivy",
+  "hc155-89/moontantivy/index",
+  "hc155-89/moontantivy/query",
+  "hc155-89/moontantivy/score",
+  "hc155-89/moontantivy/storage",
+  "hc155-89/moontantivy/tokenizer",
+  "moonbitlang/core/debug",
+  "moonbitlang/x/fs",
+}
