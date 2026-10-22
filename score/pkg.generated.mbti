@@ -1,11 +1,23 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "hc155-89/moontantivy/score"
 
+import {
+  "hc155-89/moontantivy/index",
+}
+
 // Values
+pub fn idf(Int32, Int32) -> Double
+
+pub fn score(Array[String], Int32, @index.InvertedIndex, BM25Config) -> Double
 
 // Errors
 
 // Types and methods
+pub struct BM25Config {
+  k1 : Double
+  b : Double
+}
+pub fn BM25Config::new(k1? : Double, b? : Double) -> Self
 
 // Type aliases
 

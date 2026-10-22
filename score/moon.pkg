@@ -1,1 +1,15 @@
-// score 包配置。评分只依赖索引统计信息。
+// score 包配置。
+//
+// 评分只依赖索引统计信息：
+// - index 提供文档长度、文档频率与倒排表；
+// - math 提供 IDF 需要的自然对数。
+import {
+  "hc155-89/moontantivy/index",
+  "moonbitlang/core/math",
+}
+
+// 黑盒测试需要自建索引，因此额外引入文档类型与分词器。
+import {
+  "hc155-89/moontantivy",
+  "hc155-89/moontantivy/tokenizer",
+} for "test"
