@@ -1,5 +1,7 @@
 # moontantivy 项目申报书
 
+[![CI](https://github.com/hc155-89/moontantivy/actions/workflows/ci.yml/badge.svg)](https://github.com/hc155-89/moontantivy/actions/workflows/ci.yml)
+
 ## 基本信息
 
 | 项目 | 内容 |
@@ -214,6 +216,10 @@ $ moon run example
 | `api` | 5 | 端到端 Top-K、非法输入、更新语义、参数影响、JSON 文本往返 |
 
 合计 **56 个测试**，`moon test` 全部通过。
+
+### 持续集成
+
+`.github/workflows/ci.yml` 在每次 push 到 `main` 与每个 Pull Request 上执行：`moon fmt --check`、`moon check --deny-warn`、`moon test`、`moon build example --target wasm-gc`、`moon package`。
 
 ### 目录结构
 
