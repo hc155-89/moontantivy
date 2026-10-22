@@ -108,6 +108,31 @@ let reopened = @api.SearchEngine::load("index_data.json")
 let hits = reopened.search("rust OR moonbit", 5)
 ```
 
+### 运行验证
+
+三条命令的实际结果（本项目每次提交前都会重复执行）：
+
+```text
+$ moon check
+Finished. moon: ran 8 tasks, now up to date (0 warnings, 0 errors)
+
+$ moon test
+Total tests: 53, passed: 53, failed: 0.
+
+$ moon run example
+[2/5] 执行检索
+  并集: wasm OR webassembly (Top 5)
+    #1  score=2.0312  doc=5  WebAssembly Runtime
+    #2  score=0.6392  doc=4  Rust and Wasm
+    #3  score=0.4527  doc=1  MoonBit Language
+    #4  score=0.4121  doc=6  MoonBit vs Rust
+[4/5] 保存索引到 index_data.json
+  写入成功，JSON 大小 7734 字节
+[5/5] 从磁盘重新加载并再次检索
+  恢复文档数：6
+  持久化验证通过：加载后的结果与内存中完全一致
+```
+
 ## 关键局部改进
 
 以下改进不是对参考实现的机械搬运，而是针对 MoonBit 的语言特性与 WASM 运行环境重新设计后形成的实际贡献，也是本项目区别于"关键词匹配 Demo"的核心依据。
@@ -116,7 +141,7 @@ let hits = reopened.search("rust OR moonbit", 5)
 
 检索链路上的错误被拆成**可判定的类型**，而不是统一返回一个字符串或直接 panic：
 
-- `query.ParseError` 区分 8 种语法问题：`EmptyQuery`、`EmptyPhrase`、`UnterminatedPhrase`、`UnbalancedParenthesis`、`MissingOperand`、`TrailingToken`、`TooDeep` 等，每种都配有 `message()` 给出可直接展示给用户的中文描述。
+- `query.ParseError` 区分 7 种语法问题：`EmptyQuery`、`EmptyPhrase`、`UnterminatedPhrase`、`UnbalancedParenthesis`、`MissingOperand`、`TrailingToken`、`TooDeep`，每种都配有 `message()` 给出可直接展示给用户的中文描述。
 - `storage.StorageError` 区分 5 种失败语义：`IoFailure`（携带底层信息）、`MalformedJson`（语法不合法）、`SchemaMismatch`（结构不符）、`UnsupportedVersion`（版本不兼容）、`CorruptIndex`（统计值自相矛盾）。
 - `api.SearchEngine::search` 对非法查询**返回空结果而不是抛异常**，保证 UI 层不会因用户误输入而中断；需要区分错误时仍可直接调用 `parse_query` 拿到具体变体。
 
@@ -203,7 +228,7 @@ moontantivy/
 
 ### 提交记录
 
-仓库包含 10 次独立、可验证的功能提交，每一次都对应可运行的状态（`moon check` 与 `moon test` 均通过）：
+仓库包含 10 个功能里程碑提交（另有针对本申报书的文档修订提交），每一次代码提交都对应可运行的状态（`moon check` 与 `moon test` 均通过）：
 
 | # | Commit | 内容 |
 | ---: | --- | --- |
@@ -216,7 +241,7 @@ moontantivy/
 | 7 | `30f60e3` | feat: unify API surface and add e2e integration tests |
 | 8 | `fbabe3e` | docs: add runnable example demonstrating full lifecycle |
 | 9 | `50d0e2d` | feat: guard query parser against excessive nesting depth |
-| 10 | 本文件所在提交 | docs: add project application README |
+| 10 | `df5e465` | docs: add project application README with architecture and contribution notes |
 
 ## 后续规划
 
