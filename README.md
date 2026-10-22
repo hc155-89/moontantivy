@@ -18,19 +18,19 @@ moontantivy 是一个用 MoonBit 从零实现的嵌入式全文检索引擎。�
 
 项目的目标不是做一个"演示级"的关键词匹配器，而是在 MoonBit 现有语言能力下交付一个**可嵌入、可持久化、行为可预测**的检索内核：
 
-- **纯 MoonBit 实现**：核心检索逻辑不依赖任何 C / Rust 绑定，可编译到 WASM 与 native，适合沙箱与边缘环境；
+- **纯 MoonBit 实现**：核心检索逻辑不依赖任何 C / Rust 绑定，已通过 `wasm-gc` 目标编译验证（native 目标需本地 MSVC 工具链），适合沙箱与边缘环境；
 - **位置级倒排表**：倒排记录保留词项的精确位置，短语查询不是字符串 `contains`，而是真正的位置连续性验证；
 - **可解释的评分**：BM25 采用 Lucene 的平滑 IDF，参数 `k1` / `b` 可配置，排序结果稳定可复现；
 - **确定性持久化**：同一份索引多次导出的 JSON 字节完全一致，并带版本号与完整性校验；
 - **工程化边界处理**：查询语法错误有精确类型与可读消息，解析深度有硬上限，损坏的索引文件会被拒绝而不是产生半个索引。
 
-当前仓库包含 19 个 `.mbt` 文件、3351 行代码（源码 2177 行、测试 1174 行），**53 个测试全部通过**，`moon check` 零错误零警告。
+当前仓库包含 19 个 `.mbt` 文件、3469 行代码（源码 2223 行、测试 1246 行），**56 个测试全部通过**，`moon check` 无错误与警告。
 
 ## 项目方向与通用性说明
 
 本项目属于 **MoonBit 基础库 / 基础设施** 方向，通用性体现在四个方面：
 
-1. **与运行时解耦**：核心库不假设宿主是浏览器、Node、CLI 还是服务端；文件持久化通过官方 `moonbitlang/x/fs` 完成，其余逻辑全部是纯计算，可编译到任意受支持的 backend。
+1. **与运行时解耦**：核心库不假设宿主是浏览器、Node、CLI 还是服务端；文件持久化通过官方 `moonbitlang/x/fs` 完成，其余逻辑全部是纯计算；已验证 `wasm-gc` 目标，native 目标需要本地 MSVC 工具链。
 2. **与业务解耦**：只依赖"文档 = id + 标题 + 正文"这一最小模型，不绑定商品、日志、文章等具体领域；调用方可在上层自行映射字段。
 3. **API 面收敛**：对外只暴露 `Document` 与 `SearchEngine`，调用方不需要理解倒排表、分词器、评分公式；需要换分词策略或调 BM25 参数时再显式打开。
 4. **可组合**：每个子包（tokenizer / index / query / score / storage）都可以单独使用：只需要分词可以做 `StandardTokenizer`，只需要评分可以拿 `score` 包配合自建索引。
@@ -40,7 +40,7 @@ moontantivy 是一个用 MoonBit 从零实现的嵌入式全文检索引擎。�
 ### 场景一：静态文档站 / 博客的站内搜索
 
 - **输入**：一批 Markdown 文章（标题 + 正文）。
-- **流程**：构建期用 `SearchEngine` 批量 `add_document`，`save` 成单文件 `index_data.json`，与站点静态资源一起发布；浏览器端加载 WASM 模块后 `SearchEngine::load` 恢复索引。
+- **流程**：构建期用 `SearchEngine` 批量 `add_document`，`save` 成单文件 `index_data.json`，与站点静态资源一起发布；浏览器端加载 WASM 模块后，通过 `fetch` 取回 JSON 文本并调用 `SearchEngine::from_json` 恢复索引，无需可写文件系统。
 - **输出**：用户输入 `"inverted index"` 或 `moonbit AND NOT rust` 时，前端直接得到按 BM25 排序的 Top-K 结果（含 `doc_id`、`title`、`score`），无需部署搜索服务。
 - **价值**：零后端成本、零外部依赖，索引随站点版本一起做 diff 与缓存。
 
@@ -55,14 +55,14 @@ moontantivy 是一个用 MoonBit 从零实现的嵌入式全文检索引擎。�
 
 - **输入**：随函数包一起部署的索引文件 + 用户查询串。
 - **流程**：冷启动时 `SearchEngine::load`（纯内存反序列化，不依赖数据库连接），随后在请求内完成解析、召回、评分与截断。
-- **输出**：毫秒级的 Top-K 结果，返回结构固定，便于直接序列化成 HTTP 响应。
-- **价值**：没有原生动态库依赖，天然适配 WASM 沙箱；索引规模在万级文档内时，单文件加载与内存检索的成本远低于引入外部搜索服务。
+- **输出**：单次请求内完成解析、召回、评分与截断，返回结构固定，便于直接序列化成 HTTP 响应。
+- **价值**：没有原生动态库依赖，天然适配 WASM 沙箱；索引加载与检索都在进程内以纯内存计算完成，无需部署和运维外部搜索服务。
 
 ### 场景四：检索原理的教学与研究参考
 
 - **输入**：想理解倒排索引、BM25、递归下降解析的学生或工程师。
 - **流程**：按 `tokenizer -> index -> score -> query -> storage -> api` 的顺序阅读，每个模块都有完整注释与针对性测试；`moon run example` 可一步跑通完整生命周期。
-- **输出**：一份可运行、可修改的 3000 行级参考实现，而不是伪代码。
+- **输出**：一份可运行、可修改的 3400 行级参考实现，而不是伪代码。
 - **价值**：填补 MoonBit 生态在信息检索方向上的空白，可作为后续项目的起点。
 
 ## 核心功能（当前已实现）
@@ -84,8 +84,8 @@ moontantivy 是一个用 MoonBit 从零实现的嵌入式全文检索引擎。�
 ## 快速开始
 
 ```bash
-moon check          # 类型检查（0 error / 0 warning）
-moon test           # 53 个测试
+moon check          # 类型检查，无错误与警告
+moon test           # 56 个测试
 moon run example    # 完整生命周期演示
 ```
 
@@ -106,18 +106,22 @@ for hit in engine.search("moonbit AND \"inverted index\"", 10) {
 engine.save("index_data.json")
 let reopened = @api.SearchEngine::load("index_data.json")
 let hits = reopened.search("rust OR moonbit", 5)
+
+// 浏览器 / 边缘场景：不落盘，直接在内存中序列化与恢复
+let text = engine.to_json()
+let from_text = @api.SearchEngine::from_json(text)
 ```
 
 ### 运行验证
 
-三条命令的实际结果（本项目每次提交前都会重复执行）：
+三条命令的实际结果（本项目每次功能提交前都会重复执行）：
 
 ```text
 $ moon check
-Finished. moon: ran 8 tasks, now up to date (0 warnings, 0 errors)
+Finished. moon: no work to do
 
 $ moon test
-Total tests: 53, passed: 53, failed: 0.
+Total tests: 56, passed: 56, failed: 0.
 
 $ moon run example
 [2/5] 执行检索
@@ -206,10 +210,10 @@ $ moon run example
 | `index` | 8 | 词频、位置、更新、删除、统计 |
 | `score` | 6 | IDF、长度归一化、参数影响、边界 |
 | `query` | 11 | 优先级、隐式 AND、规范化、语法错误、深度限制、集合语义 |
-| `storage` | 7 | 往返一致、确定性、空索引、损坏文件、版本、可继续修改 |
-| `api` | 4 | 端到端 Top-K、非法输入、更新语义、参数影响 |
+| `storage` | 9 | 往返一致、确定性、空索引、损坏文件、版本、可继续修改、字符串往返 |
+| `api` | 5 | 端到端 Top-K、非法输入、更新语义、参数影响、JSON 文本往返 |
 
-合计 **53 个测试**，`moon test` 全部通过。
+合计 **56 个测试**，`moon test` 全部通过。
 
 ### 目录结构
 
@@ -228,7 +232,7 @@ moontantivy/
 
 ### 提交记录
 
-仓库包含 10 个功能里程碑提交（另有针对本申报书的文档修订提交），每一次代码提交都对应可运行的状态（`moon check` 与 `moon test` 均通过）：
+仓库共 13 次提交：10 次功能 / 工程里程碑，3 次申报书与验证记录的文档修订。每个功能提交都对应可运行的状态（`moon check` 与 `moon test` 均通过）：
 
 | # | Commit | 内容 |
 | ---: | --- | --- |
@@ -241,7 +245,10 @@ moontantivy/
 | 7 | `30f60e3` | feat: unify API surface and add e2e integration tests |
 | 8 | `fbabe3e` | docs: add runnable example demonstrating full lifecycle |
 | 9 | `50d0e2d` | feat: guard query parser against excessive nesting depth |
-| 10 | `df5e465` | docs: add project application README with architecture and contribution notes |
+| 10 | `2276678` | feat: support in-memory JSON serialization for browser and edge runtimes |
+| 11 | `df5e465` | docs: add project application README with architecture and contribution notes |
+| 12 | `00bcab1` | docs: record verified run output and fix error variant count |
+| 13 | 本次提交 | docs: align application README with verified capabilities |
 
 ## 后续规划
 
