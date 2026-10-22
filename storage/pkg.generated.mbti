@@ -1,11 +1,42 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "hc155-89/moontantivy/storage"
 
+import {
+  "hc155-89/moontantivy/index",
+  "moonbitlang/core/json",
+  "moonbitlang/x/fs",
+}
+
 // Values
+pub fn load_from_file(String) -> @index.InvertedIndex raise StorageError
+
+pub fn save_to_file(@index.InvertedIndex, String) -> Unit raise @fs.IOError
 
 // Errors
+pub suberror StorageError {
+  IoFailure(String)
+  MalformedJson
+  SchemaMismatch
+  UnsupportedVersion(Int32)
+  CorruptIndex(String)
+}
 
 // Types and methods
+type DocumentRecord derive(ToJson, @json.FromJson)
+pub fn DocumentRecord::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn DocumentRecord::to_json(Self) -> Json
+
+type IndexRecord derive(ToJson, @json.FromJson)
+pub fn IndexRecord::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn IndexRecord::to_json(Self) -> Json
+
+type PostingRecord derive(ToJson, @json.FromJson)
+pub fn PostingRecord::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn PostingRecord::to_json(Self) -> Json
+
+type TermRecord derive(ToJson, @json.FromJson)
+pub fn TermRecord::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn TermRecord::to_json(Self) -> Json
 
 // Type aliases
 

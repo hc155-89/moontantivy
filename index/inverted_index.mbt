@@ -86,6 +86,73 @@ pub fn InvertedIndex::add_doc(
 }
 
 ///|
+/// 按字典序返回索引中的全部词项。
+///
+/// 持久化与调试输出都依赖稳定的顺序：`HashMap` 遍历顺序不确定，
+/// 因此这里显式排序，保证同一份索引多次导出的文件内容完全一致。
+pub fn InvertedIndex::terms(self : InvertedIndex) -> Array[String] {
+  let terms : Array[String] = Array()
+  for term, _ in self.postings {
+    terms.push(term)
+  }
+  terms.sort()
+  terms
+}
+
+///|
+/// 返回某篇文档出现过的词项集合（用于持久化与删除）。
+///
+/// 这些词项是分词后实际写入倒排表的那些，不含被停用词过滤的词。
+pub fn InvertedIndex::doc_terms_of(
+  self : InvertedIndex,
+  doc_id : Int32,
+) -> Array[String]? {
+  self.doc_terms.get(doc_id)
+}
+
+///|
+/// 直接写入一篇“已经分好词”的文档，跳过分词步骤。
+///
+/// 这是从持久化数据恢复索引的入口：`length` 是文档的有效词项数，
+/// `terms` 是文档出现过的词项集合。同 ID 已存在时按更新语义先删除旧记录。
+/// 正常建索引请使用 `add_doc`，它会在写入前完成分词与词频统计。
+pub fn InvertedIndex::restore_doc(
+  self : InvertedIndex,
+  doc : @moontantivy.Document,
+  length : Int32,
+  terms : Array[String],
+) -> Unit {
+  if self.documents.contains(doc.id) {
+    let _ = self.remove_doc(doc.id)
+  }
+  self.documents.set(doc.id, doc)
+  self.doc_lengths.set(doc.id, length)
+  self.doc_terms.set(doc.id, terms)
+  self.token_count = self.token_count + length
+}
+
+///|
+/// 直接写入一条投递记录，跳过分词步骤。
+///
+/// `positions` 必须按升序给出词项在文档中的出现位置；词频由位置个数推导，
+/// 与 `PostingList::add` 的约定一致。同文档同词项重复写入会覆盖旧记录。
+pub fn InvertedIndex::restore_posting(
+  self : InvertedIndex,
+  term : String,
+  doc_id : Int32,
+  positions : Array[Int32],
+) -> Unit {
+  match self.postings.get(term) {
+    Some(list) => list.add(doc_id, positions)
+    None => {
+      let list = PostingList::new()
+      list.add(doc_id, positions)
+      self.postings.set(term, list)
+    }
+  }
+}
+
+///|
 /// 从索引中删除一篇文档，返回是否找到并删除了该文档。
 ///
 /// 只遍历该文档出现过的词项；某个词项在删除后若不再被任何文档包含，

@@ -1,1 +1,17 @@
-// storage 包配置。依赖 moonbitlang/x 的文件系统与 JSON 能力。
+// storage 包配置。
+//
+// - index 提供索引结构与恢复入口；
+// - fs 负责文件读写；
+// - json 是 MoonBit 核心库的序列化/反序列化能力。
+import {
+  "hc155-89/moontantivy",
+  "hc155-89/moontantivy/index",
+  "moonbitlang/core/json",
+  "moonbitlang/x/fs",
+}
+
+// 黑盒测试需要自建索引、分词并验证查询结果。
+import {
+  "hc155-89/moontantivy/query",
+  "hc155-89/moontantivy/tokenizer",
+} for "test"
