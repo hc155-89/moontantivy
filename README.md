@@ -33,7 +33,7 @@ moontantivy 是一个用 MoonBit 从零实现的嵌入式全文检索引擎。�
 1. **与运行时解耦**：核心库不假设宿主是浏览器、Node、CLI 还是服务端；文件持久化通过官方 `moonbitlang/x/fs` 完成，其余逻辑全部是纯计算；已验证 `wasm-gc` 目标，native 目标需要本地 MSVC 工具链。
 2. **与业务解耦**：只依赖"文档 = id + 标题 + 正文"这一最小模型，不绑定商品、日志、文章等具体领域；调用方可在上层自行映射字段。
 3. **API 面收敛**：对外只暴露 `Document` 与 `SearchEngine`，调用方不需要理解倒排表、分词器、评分公式；需要换分词策略或调 BM25 参数时再显式打开。
-4. **可组合**：每个子包（tokenizer / index / query / score / storage）都可以单独使用：只需要分词可以做 `StandardTokenizer`，只需要评分可以拿 `score` 包配合自建索引。
+4. **可组合**：每个子包（tokenizer / index / query / score / storage）都可以单独使用：只需要分词可以做 `StandardTokenizer`，只需要评分可以把 `score` 包与 `index` 包组合使用。
 
 ## 预期使用场景
 
@@ -42,7 +42,7 @@ moontantivy 是一个用 MoonBit 从零实现的嵌入式全文检索引擎。�
 - **输入**：一批 Markdown 文章（标题 + 正文）。
 - **流程**：构建期用 `SearchEngine` 批量 `add_document`，`save` 成单文件 `index_data.json`，与站点静态资源一起发布；浏览器端加载 WASM 模块后，通过 `fetch` 取回 JSON 文本并调用 `SearchEngine::from_json` 恢复索引，无需可写文件系统。
 - **输出**：用户输入 `"inverted index"` 或 `moonbit AND NOT rust` 时，前端直接得到按 BM25 排序的 Top-K 结果（含 `doc_id`、`title`、`score`），无需部署搜索服务。
-- **价值**：零后端成本、零外部依赖，索引随站点版本一起做 diff 与缓存。
+- **价值**：零后端成本、不依赖外部搜索服务，索引随站点版本一起做 diff 与缓存。
 
 ### 场景二：桌面笔记 / 本地日志分析工具
 
@@ -54,7 +54,7 @@ moontantivy 是一个用 MoonBit 从零实现的嵌入式全文检索引擎。�
 ### 场景三：Serverless / 边缘函数中的轻量检索
 
 - **输入**：随函数包一起部署的索引文件 + 用户查询串。
-- **流程**：冷启动时 `SearchEngine::load`（纯内存反序列化，不依赖数据库连接），随后在请求内完成解析、召回、评分与截断。
+- **流程**：冷启动时读取单文件并完成纯内存反序列化（不依赖数据库连接），随后在请求内完成解析、召回、评分与截断。
 - **输出**：单次请求内完成解析、召回、评分与截断，返回结构固定，便于直接序列化成 HTTP 响应。
 - **价值**：没有原生动态库依赖，天然适配 WASM 沙箱；索引加载与检索都在进程内以纯内存计算完成，无需部署和运维外部搜索服务。
 
@@ -114,7 +114,7 @@ let from_text = @api.SearchEngine::from_json(text)
 
 ### 运行验证
 
-三条命令的实际结果（本项目每次功能提交前都会重复执行）：
+三条命令的当前实际输出：
 
 ```text
 $ moon check
@@ -232,7 +232,7 @@ moontantivy/
 
 ### 提交记录
 
-仓库共 14 次提交：10 次交付性提交（初始化、核心实现与可运行示例），4 次文档修订。每个交付性提交都对应可运行的状态（`moon check` 与 `moon test` 均通过）：
+仓库包含 **10 次交付性提交**（初始化、核心实现与可运行示例），另有申报书与验证记录的文档修订；完整历史见 `git log`。每个交付性提交都对应可运行的状态（`moon check` 与 `moon test` 均通过）：
 
 | # | Commit | 内容 |
 | ---: | --- | --- |
@@ -245,11 +245,9 @@ moontantivy/
 | 7 | `30f60e3` | feat: unify API surface and add e2e integration tests |
 | 8 | `fbabe3e` | docs: add runnable example demonstrating full lifecycle |
 | 9 | `50d0e2d` | feat: guard query parser against excessive nesting depth |
-| 10 | `df5e465` | docs: add project application README with architecture and contribution notes |
-| 11 | `00bcab1` | docs: record verified run output and fix error variant count |
-| 12 | `2276678` | feat: support in-memory JSON serialization for browser and edge runtimes |
-| 13 | `90b64f7` | docs: align application README with verified capabilities |
-| 14 | 本次提交 | docs: correct commit timeline ordering |
+| 10 | `2276678` | feat: support in-memory JSON serialization for browser and edge runtimes |
+
+文档修订提交（如 `df5e465` 申报书初稿、`00bcab1` 更正验证输出与错误类型数量、`90b64f7` 对齐已核实能力）不计入上述交付性提交，但同样保持文档与代码一致。
 
 ## 后续规划
 
