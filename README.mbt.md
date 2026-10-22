@@ -8,13 +8,17 @@
 - **确定性持久化**：同一索引多次导出的 JSON 字节完全一致，带版本号与完整性校验。
 - **可判定的错误类型**：查询解析 7 种错误、存储加载 5 种错误，均有可读消息。
 
-## 安装
+## 获取与引入
+
+模块尚未发布到 mooncakes.io（当前处于赛事初审阶段），请直接克隆仓库使用：
 
 ```bash
-moon add hc155-89/moontantivy@0.1.0
+git clone https://github.com/hc155-89/moontantivy.git
+cd moontantivy
+moon run example
 ```
 
-在 `moon.pkg` 中引入需要的包：
+发布后可通过 `moon add hc155-89/moontantivy@<version>` 引入。在 `moon.pkg` 中使用时引入需要的包：
 
 ```text
 import {
