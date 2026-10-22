@@ -184,3 +184,50 @@ test "loaded_index_remains_mutable" {
   assert_eq(loaded.doc_length(5), Some(3))
   assert_true(loaded.get_posting_list("fresh") is Some(_))
 }
+
+///|
+/// 文本形式的往返：不经过文件系统也能完整恢复索引与查询结果。
+///
+/// 这条路径是浏览器 / 边缘场景的基础——宿主 `fetch` 到 JSON 文本后，
+/// 直接调用 `load_from_string` 即可，无需可写文件系统。
+test "string_roundtrip_matches_memory" {
+  let idx = sample_index()
+  let text = @storage.save_to_string(idx)
+  // 文本必须是非空的合法 JSON 对象，且与文件保存使用同一格式。
+  assert_true(text.length() > 0)
+  assert_true(text.has_prefix("{"))
+  let loaded = @storage.load_from_string(text)
+  assert_eq(loaded.num_docs(), idx.num_docs())
+  assert_eq(loaded.total_tokens(), idx.total_tokens())
+  assert_eq(loaded.vocabulary_size(), idx.vocabulary_size())
+  // 查询结果与内存索引一致（词项 / 短语 / 布尔 / 中文各取一种）。
+  let queries : Array[String] = [
+    "moonbit", "\"search engine\"", "rust OR go", "\"检索\"",
+  ]
+  for query in queries {
+    let expected = @query.execute(@query.parse_query(query).unwrap(), idx)
+    let actual = @query.execute(@query.parse_query(query).unwrap(), loaded)
+    assert_eq(actual, expected)
+  }
+}
+
+///|
+/// 非法文本与非法文件走同一套错误语义。
+test "malformed_string_is_rejected" {
+  let mut malformed = false
+  try {
+    let _ = @storage.load_from_string("{\"version\": 1,")
+  } catch {
+    MalformedJson => malformed = true
+    _ => ()
+  }
+  assert_true(malformed)
+  let mut mismatch = false
+  try {
+    let _ = @storage.load_from_string("{\"version\": 1}")
+  } catch {
+    SchemaMismatch => mismatch = true
+    _ => ()
+  }
+  assert_true(mismatch)
+}

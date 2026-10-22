@@ -217,3 +217,28 @@ pub fn SearchEngine::load(
     config: @score.BM25Config::new(),
   }
 }
+
+///|
+/// 把引擎的索引序列化为 JSON 文本，不落盘。
+///
+/// 适用于浏览器或边缘运行时：先由宿主通过 HTTP 取回部署好的索引文本，
+/// 再交给 `SearchEngine::from_json` 恢复。这样宿主不必提供文件系统，
+/// 引擎本身也不需要感知网络或存储方式。
+pub fn SearchEngine::to_json(self : SearchEngine) -> String {
+  @storage.save_to_string(self.index)
+}
+
+///|
+/// 从 JSON 文本恢复引擎。
+///
+/// 与 `SearchEngine::load` 使用同一套反序列化与校验逻辑，区别只是输入
+/// 来自内存字符串；适合在浏览器中 `fetch` 索引文件后直接恢复。
+pub fn SearchEngine::from_json(
+  text : String,
+) -> SearchEngine raise @storage.StorageError {
+  {
+    index: @storage.load_from_string(text),
+    tokenizer: @tokenizer.StandardTokenizer::new(),
+    config: @score.BM25Config::new(),
+  }
+}

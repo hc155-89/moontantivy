@@ -10,7 +10,11 @@ import {
 // Values
 pub fn load_from_file(String) -> @index.InvertedIndex raise StorageError
 
+pub fn load_from_string(String) -> @index.InvertedIndex raise StorageError
+
 pub fn save_to_file(@index.InvertedIndex, String) -> Unit raise @fs.IOError
+
+pub fn save_to_string(@index.InvertedIndex) -> String
 
 // Errors
 pub suberror StorageError {

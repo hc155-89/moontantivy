@@ -183,6 +183,17 @@ fn rebuild(record : IndexRecord) -> @index.InvertedIndex {
 }
 
 ///|
+/// 把索引序列化为 JSON 文本。
+///
+/// 与 `save_to_file` 共用同一套快照逻辑，区别只是不落盘。浏览器 / 边缘
+/// 运行时可以先通过 HTTP 取回这段文本，再交给 `load_from_string` 恢复，
+/// 无需依赖本地文件系统。
+pub fn save_to_string(index : @index.InvertedIndex) -> String {
+  let record = snapshot(index)
+  @json.to_json(record).stringify(indent=2)
+}
+
+///|
 /// 把索引写入 JSON 文件。
 ///
 /// 若目标文件已存在会被覆盖；调用方需保证目录存在。
@@ -191,27 +202,21 @@ pub fn save_to_file(
   index : @index.InvertedIndex,
   path : String,
 ) -> Unit raise @fs.IOError {
-  let record = snapshot(index)
-  let text = @json.to_json(record).stringify(indent=2)
-  @fs.write_string_to_file(path, text)
+  @fs.write_string_to_file(path, save_to_string(index))
 }
 
 ///|
-/// 从 JSON 文件恢复索引。
+/// 从 JSON 文本恢复索引。
 ///
-/// 所有底层错误都会被翻译成 `StorageError`：
-/// - `IoFailure`：文件不存在或不可读，附带底层信息；
-/// - `MalformedJson`：内容不是合法 JSON；
-/// - `SchemaMismatch`：JSON 结构不符合快照定义（缺字段、类型错误）；
-/// - `UnsupportedVersion`：版本不兼容；
-/// - `CorruptIndex`：统计值自相矛盾。
+/// 这是反序列化的唯一入口：文件加载只是先读文本再调用本函数，因此
+/// 字符串加载与文件加载在版本检查、结构校验和完整性校验上行为一致。
 ///
-/// 恢复后的索引与保存前的内存在文档、词项、位置、长度上完全一致，
-/// 因此查询与 BM25 评分结果也保持一致。
-pub fn load_from_file(path : String) -> @index.InvertedIndex raise StorageError {
-  let text = @fs.read_file_to_string(path) catch {
-    @fs.IOError(message) => raise IoFailure(message)
-  }
+/// 错误语义见 `StorageError`：`MalformedJson` 表示语法不合法，
+/// `SchemaMismatch` 表示结构不符，`UnsupportedVersion` 表示版本不兼容，
+/// `CorruptIndex` 表示统计值自相矛盾。
+pub fn load_from_string(
+  text : String,
+) -> @index.InvertedIndex raise StorageError {
   let parsed = @json.parse(text.view()) catch { _ => raise MalformedJson }
   let record : IndexRecord = @json.from_json(parsed) catch {
     _ => raise SchemaMismatch
@@ -225,4 +230,20 @@ pub fn load_from_file(path : String) -> @index.InvertedIndex raise StorageError 
     raise CorruptIndex("token_count 与文档长度之和不一致")
   }
   index
+}
+
+///|
+/// 从 JSON 文件恢复索引。
+///
+/// 所有底层错误都会被翻译成 `StorageError`：
+/// - `IoFailure`：文件不存在或不可读，附带底层信息；
+/// - 其余错误与 `load_from_string` 完全一致。
+///
+/// 恢复后的索引与保存前的内存在文档、词项、位置、长度上完全一致，
+/// 因此查询与 BM25 评分结果也保持一致。
+pub fn load_from_file(path : String) -> @index.InvertedIndex raise StorageError {
+  let text = @fs.read_file_to_string(path) catch {
+    @fs.IOError(message) => raise IoFailure(message)
+  }
+  load_from_string(text)
 }

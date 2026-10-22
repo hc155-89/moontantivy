@@ -22,6 +22,7 @@ pub struct SearchEngine {
   mut config : @score.BM25Config
 }
 pub fn SearchEngine::add_document(Self, @moontantivy.Document) -> Unit
+pub fn SearchEngine::from_json(String) -> Self raise @storage.StorageError
 pub fn SearchEngine::load(String) -> Self raise @storage.StorageError
 pub fn SearchEngine::new() -> Self
 pub fn SearchEngine::num_docs(Self) -> Int32
@@ -29,6 +30,7 @@ pub fn SearchEngine::remove_document(Self, Int32) -> Bool
 pub fn SearchEngine::save(Self, String) -> Unit raise @fs.IOError
 pub fn SearchEngine::search(Self, String, Int32) -> Array[SearchResult]
 pub fn SearchEngine::set_bm25(Self, @score.BM25Config) -> Self
+pub fn SearchEngine::to_json(Self) -> String
 
 pub struct SearchResult {
   doc_id : Int32

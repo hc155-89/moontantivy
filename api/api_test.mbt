@@ -165,3 +165,25 @@ test "bm25_config_changes_ranking" {
   let engine = sample_engine().set_bm25(@score.BM25Config::new(b=0.0))
   assert_eq(ids(engine.search("performance", 10)), ([2, 3, 9] : Array[Int32]))
 }
+
+///|
+/// 字符串形式的持久化：模拟浏览器 / 边缘运行时 fetch 索引文本后恢复引擎。
+///
+/// 这条路径不接触文件系统，因此是“浏览器端加载”场景可落地的前提。
+test "from_json_roundtrip_matches_engine" {
+  let engine = sample_engine()
+  let text = engine.to_json()
+  assert_true(text.length() > 0)
+  let restored = @api.SearchEngine::from_json(text)
+  assert_eq(restored.num_docs(), engine.num_docs())
+  let query = "(moonbit OR rust) AND NOT parser"
+  assert_eq(ids(restored.search(query, 10)), ids(engine.search(query, 10)))
+  // 非法文本必须抛错，而不是返回一个不完整的引擎。
+  let mut failed = false
+  try {
+    let _ = @api.SearchEngine::from_json("not a json document")
+  } catch {
+    _ => failed = true
+  }
+  assert_true(failed)
+}
