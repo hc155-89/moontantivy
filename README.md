@@ -232,7 +232,7 @@ moontantivy/
 
 ### 提交记录
 
-仓库共 13 次提交：10 次功能 / 工程里程碑，3 次申报书与验证记录的文档修订。每个功能提交都对应可运行的状态（`moon check` 与 `moon test` 均通过）：
+仓库共 14 次提交：10 次交付性提交（初始化、核心实现与可运行示例），4 次文档修订。每个交付性提交都对应可运行的状态（`moon check` 与 `moon test` 均通过）：
 
 | # | Commit | 内容 |
 | ---: | --- | --- |
@@ -245,10 +245,11 @@ moontantivy/
 | 7 | `30f60e3` | feat: unify API surface and add e2e integration tests |
 | 8 | `fbabe3e` | docs: add runnable example demonstrating full lifecycle |
 | 9 | `50d0e2d` | feat: guard query parser against excessive nesting depth |
-| 10 | `2276678` | feat: support in-memory JSON serialization for browser and edge runtimes |
-| 11 | `df5e465` | docs: add project application README with architecture and contribution notes |
-| 12 | `00bcab1` | docs: record verified run output and fix error variant count |
-| 13 | 本次提交 | docs: align application README with verified capabilities |
+| 10 | `df5e465` | docs: add project application README with architecture and contribution notes |
+| 11 | `00bcab1` | docs: record verified run output and fix error variant count |
+| 12 | `2276678` | feat: support in-memory JSON serialization for browser and edge runtimes |
+| 13 | `90b64f7` | docs: align application README with verified capabilities |
+| 14 | 本次提交 | docs: correct commit timeline ordering |
 
 ## 后续规划
 
