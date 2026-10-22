@@ -82,10 +82,9 @@ fn NGramTokenizer::emit_ngrams(
 ///
 /// 先按分隔符把文本切成若干连续片段，再对每个片段做滑动窗口。
 /// 空片段（连续标点、纯空白）不会产生词项。
-pub fn NGramTokenizer::analyze(
-  self : NGramTokenizer,
-  text : String,
-) -> Array[Token] {
+pub impl Tokenizer for NGramTokenizer with fn analyze(self, text) -> Array[
+  Token,
+] {
   let tokens : Array[Token] = Array()
   let run : Array[Char] = Array()
   let mut run_start = 0
@@ -120,4 +119,4 @@ pub impl Tokenizer for NGramTokenizer with fn tokenize(self, text) {
 
 ///|
 /// 显式声明接口方法，避免隐式提升语法在未来的 MoonBit 版本中被移除。
-pub extend NGramTokenizer with Tokenizer::{tokenize}
+pub extend NGramTokenizer with Tokenizer::{tokenize, analyze}

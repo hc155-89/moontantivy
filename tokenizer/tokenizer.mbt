@@ -36,6 +36,7 @@ pub extend Token with @debug.Debug::{to_repr}
 /// - 不返回空字符串。
 pub trait Tokenizer {
   fn tokenize(Self, String) -> Array[String]
+  fn analyze(Self, String) -> Array[Token]
 }
 
 ///|

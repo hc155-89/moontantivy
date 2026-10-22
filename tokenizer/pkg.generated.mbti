@@ -45,4 +45,5 @@ pub fn Token::to_repr(Self) -> @debug.Repr
 // Traits
 pub trait Tokenizer {
   fn tokenize(Self, String) -> Array[String]
+  fn analyze(Self, String) -> Array[Token]
 }

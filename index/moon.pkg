@@ -1,1 +1,10 @@
-// index 包配置。依赖 tokenizer 完成建索引时的分词。
+// index 包配置。
+//
+// - 根包提供 Document 类型；
+// - tokenizer 提供分词与位置信息；
+// - hashmap 用于词典与文档表。
+import {
+  "hc155-89/moontantivy",
+  "hc155-89/moontantivy/tokenizer",
+  "moonbitlang/core/hashmap",
+}

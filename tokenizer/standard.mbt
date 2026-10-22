@@ -58,10 +58,9 @@ fn is_stopword(word : String) -> Bool {
 ///
 /// 这是索引层实际使用的入口：倒排表需要记录词项出现位置，
 /// 才能在查询阶段判断 "quick brown" 是否真的相邻。
-pub fn StandardTokenizer::analyze(
-  self : StandardTokenizer,
-  text : String,
-) -> Array[Token] {
+pub impl Tokenizer for StandardTokenizer with fn analyze(self, text) -> Array[
+  Token,
+] {
   let tokens : Array[Token] = Array()
   let segments = split_segments(text)
   let mut position = 0
@@ -88,4 +87,4 @@ pub impl Tokenizer for StandardTokenizer with fn tokenize(self, text) {
 
 ///|
 /// 显式声明接口方法，避免隐式提升语法在未来的 MoonBit 版本中被移除。
-pub extend StandardTokenizer with Tokenizer::{tokenize}
+pub extend StandardTokenizer with Tokenizer::{tokenize, analyze}

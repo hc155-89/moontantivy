@@ -1,11 +1,55 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "hc155-89/moontantivy/index"
 
+import {
+  "hc155-89/moontantivy",
+  "hc155-89/moontantivy/tokenizer",
+  "moonbitlang/core/hashmap",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+pub struct InvertedIndex {
+  postings : @hashmap.HashMap[String, PostingList]
+  documents : @hashmap.HashMap[Int32, @moontantivy.Document]
+  doc_lengths : @hashmap.HashMap[Int32, Int32]
+  doc_terms : @hashmap.HashMap[Int32, Array[String]]
+  mut token_count : Int32
+}
+pub fn InvertedIndex::add_doc(Self, @moontantivy.Document, &@tokenizer.Tokenizer) -> Unit
+pub fn InvertedIndex::average_doc_length(Self) -> Double
+pub fn InvertedIndex::contains_doc(Self, Int32) -> Bool
+pub fn InvertedIndex::doc_freq(Self, String) -> Int32
+pub fn InvertedIndex::doc_length(Self, Int32) -> Int32?
+pub fn InvertedIndex::get_document(Self, Int32) -> @moontantivy.Document?
+pub fn InvertedIndex::get_posting_list(Self, String) -> PostingList?
+pub fn InvertedIndex::new() -> Self
+pub fn InvertedIndex::num_docs(Self) -> Int32
+pub fn InvertedIndex::remove_doc(Self, Int32) -> Bool
+pub fn InvertedIndex::total_tokens(Self) -> Int32
+pub fn InvertedIndex::vocabulary_size(Self) -> Int32
+
+pub struct Posting {
+  doc_id : Int32
+  term_freq : Int32
+  positions : Array[Int32]
+}
+
+pub struct PostingList {
+  postings : Array[Posting]
+}
+pub fn PostingList::add(Self, Int32, Array[Int32]) -> Unit
+pub fn PostingList::doc_freq(Self) -> Int32
+pub fn PostingList::entries(Self) -> ArrayView[Posting]
+pub fn PostingList::is_empty(Self) -> Bool
+pub fn PostingList::new() -> Self
+pub fn PostingList::posting(Self, Int32) -> Posting?
+pub fn PostingList::posting_at(Self, Int32) -> Posting?
+pub fn PostingList::remove(Self, Int32) -> Bool
+pub fn PostingList::total_freq(Self) -> Int32
 
 // Type aliases
 
