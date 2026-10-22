@@ -1,0 +1,28 @@
+# ---- MoonBit 构建产物 ----
+_build/
+target/
+.mooncaches/
+.mooncakes/
+.moonagent/
+.moon-lock
+*.mbti.bak
+*.wasm
+*.wat
+
+# ---- 索引持久化测试产物 ----
+*.idx.json
+*.idx.json.tmp
+*.moonidx
+*.moonidx.tmp
+/tmp_index/
+/testdata/out/
+
+# ---- 操作系统 / 编辑器 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
