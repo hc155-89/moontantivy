@@ -127,7 +127,10 @@ pub fn is_word_char(ch : Char) -> Bool {
 /// 例如 "MoonBit 搜索引擎" -> ["moonbit", "搜", "索", "引", "擎"]。
 /// 这是 StandardTokenizer 的切分基础；NGramTokenizer 需要保留连续片段
 /// 做滑动窗口，因此不会直接复用本函数的输出。
-fn split_segments(text : String) -> Array[String] {
+///
+/// 查询解析器也复用同一套切分规则，保证“索引侧”和“查询侧”生成的
+/// 词项完全一致，否则会出现索引里有、查询里查不到的不对称。
+pub fn split_terms(text : String) -> Array[String] {
   let segments : Array[String] = Array()
   let buffer = StringBuilder()
   let mut in_word = false

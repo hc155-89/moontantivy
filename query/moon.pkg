@@ -1,1 +1,12 @@
-// query 包配置。依赖 tokenizer 对查询串做分词。
+// query 包配置。
+//
+// 解析器复用 tokenizer 的切分规则，执行器依赖 index 的倒排表与文档集合。
+import {
+  "hc155-89/moontantivy/index",
+  "hc155-89/moontantivy/tokenizer",
+}
+
+// 黑盒测试需要新建文档与索引。
+import {
+  "hc155-89/moontantivy",
+} for "test"

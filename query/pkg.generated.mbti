@@ -1,11 +1,36 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "hc155-89/moontantivy/query"
 
+import {
+  "hc155-89/moontantivy/index",
+}
+
 // Values
+pub fn execute(Query, @index.InvertedIndex) -> Array[Int32]
+
+pub fn parse_query(String) -> Result[Query, ParseError]
 
 // Errors
 
 // Types and methods
+pub enum ParseError {
+  EmptyQuery
+  EmptyPhrase
+  UnterminatedPhrase
+  UnbalancedParenthesis
+  MissingOperand
+  TrailingToken
+}
+pub fn ParseError::message(Self) -> String
+
+pub enum Query {
+  Term(String)
+  And(Query, Query)
+  Or(Query, Query)
+  Not(Query)
+  Phrase(Array[String])
+}
+pub fn Query::to_string(Self) -> String
 
 // Type aliases
 

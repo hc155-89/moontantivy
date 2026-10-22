@@ -146,6 +146,21 @@ pub fn InvertedIndex::num_docs(self : InvertedIndex) -> Int32 {
 }
 
 ///|
+/// 返回索引内全部文档 ID，按升序排列。
+///
+/// 查询层的 `NOT` 需要“全集减去匹配集”，因此必须能枚举全部文档；
+/// 这里显式排序，因为 `HashMap` 的遍历顺序不保证稳定，
+/// 而集合差运算与结果可复现性都依赖有序输入。
+pub fn InvertedIndex::doc_ids(self : InvertedIndex) -> Array[Int32] {
+  let ids : Array[Int32] = Array()
+  for doc_id, _ in self.documents {
+    ids.push(doc_id)
+  }
+  ids.sort()
+  ids
+}
+
+///|
 /// 全库有效词项总数（所有文档长度之和）。
 pub fn InvertedIndex::total_tokens(self : InvertedIndex) -> Int32 {
   self.token_count

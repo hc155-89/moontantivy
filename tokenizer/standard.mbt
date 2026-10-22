@@ -62,7 +62,7 @@ pub impl Tokenizer for StandardTokenizer with fn analyze(self, text) -> Array[
   Token,
 ] {
   let tokens : Array[Token] = Array()
-  let segments = split_segments(text)
+  let segments = split_terms(text)
   let mut position = 0
   for segment in segments {
     if !(self.remove_stopwords && is_stopword(segment)) {

@@ -23,6 +23,7 @@ pub fn InvertedIndex::add_doc(Self, @moontantivy.Document, &@tokenizer.Tokenizer
 pub fn InvertedIndex::average_doc_length(Self) -> Double
 pub fn InvertedIndex::contains_doc(Self, Int32) -> Bool
 pub fn InvertedIndex::doc_freq(Self, String) -> Int32
+pub fn InvertedIndex::doc_ids(Self) -> Array[Int32]
 pub fn InvertedIndex::doc_length(Self, Int32) -> Int32?
 pub fn InvertedIndex::get_document(Self, Int32) -> @moontantivy.Document?
 pub fn InvertedIndex::get_posting_list(Self, String) -> PostingList?

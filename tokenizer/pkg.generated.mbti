@@ -12,6 +12,8 @@ pub fn is_word_char(Char) -> Bool
 
 pub fn normalize_char(Char) -> Char
 
+pub fn split_terms(String) -> Array[String]
+
 // Errors
 
 // Types and methods
