@@ -1,12 +1,48 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "hc155-89/moontantivy/tokenizer"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
+pub fn is_cjk(Char) -> Bool
+
+pub fn is_word_char(Char) -> Bool
+
+pub fn normalize_char(Char) -> Char
 
 // Errors
 
 // Types and methods
+pub struct NGramTokenizer {
+  n : Int32
+}
+pub fn NGramTokenizer::analyze(Self, String) -> Array[Token]
+pub fn NGramTokenizer::new(n? : Int32) -> Self
+pub fn NGramTokenizer::tokenize(Self, String) -> Array[String]
+pub fn NGramTokenizer::window_size(Self) -> Int32
+pub impl Tokenizer for NGramTokenizer
+
+pub struct StandardTokenizer {
+  remove_stopwords : Bool
+}
+pub fn StandardTokenizer::analyze(Self, String) -> Array[Token]
+pub fn StandardTokenizer::new(remove_stopwords? : Bool) -> Self
+pub fn StandardTokenizer::tokenize(Self, String) -> Array[String]
+pub impl Tokenizer for StandardTokenizer
+
+pub struct Token {
+  term : String
+  position : Int32
+} derive(Eq, @debug.Debug)
+pub fn Token::equal(Self, Self) -> Bool
+pub fn Token::not_equal(Self, Self) -> Bool
+pub fn Token::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
+pub trait Tokenizer {
+  fn tokenize(Self, String) -> Array[String]
+}

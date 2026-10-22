@@ -1,0 +1,6 @@
+// 模块根包：核心数据结构。
+//
+// 需要 import debug 包，才能显式声明 derive(Debug) 生成的 to_repr 方法。
+import {
+  "moonbitlang/core/debug",
+}
