@@ -31,7 +31,8 @@ pub enum Query {
 /// 查询解析错误。
 ///
 /// 解析器不会 panic：所有失败都以 `Err` 返回，让上层可以决定是提示用户
-/// 还是回退为“当作普通词项搜索”。
+/// 还是回退为“当作普通词项搜索”。每个变体对应一种可定位的语法问题，
+/// 便于 UI 精确提示错误位置（例如“第 N 个左括号没有闭合”）。
 pub enum ParseError {
   /// 输入为空或只有空白。
   EmptyQuery
@@ -45,6 +46,8 @@ pub enum ParseError {
   MissingOperand
   /// 表达式结束后仍有无法归约的记号。
   TrailingToken
+  /// 括号或 NOT 的嵌套层级超过 `MAX_QUERY_DEPTH`。
+  TooDeep
 }
 
 ///|
@@ -57,8 +60,20 @@ pub fn ParseError::message(self : ParseError) -> String {
     UnbalancedParenthesis => "括号不匹配"
     MissingOperand => "运算符缺少操作数"
     TrailingToken => "查询末尾存在多余内容"
+    TooDeep => "查询嵌套层级过深"
   }
 }
+
+///|
+/// 查询表达式的最大嵌套层级。
+///
+/// 递归下降解析器的调用栈深度与括号 / NOT 的嵌套层级成正比。真实用户
+/// 查询通常只有 1–3 层，设置上限可以避免恶意或误生成的
+/// `((((…))))`、`NOT NOT NOT …` 把 WASM 线程栈撑爆——这类输入在
+/// 解析阶段就被拒绝，而不是运行到一半崩溃。
+///
+/// 64 层远高于正常使用需求，又远低于默认栈容量能承受的递归深度。
+const MAX_QUERY_DEPTH : Int32 = 64
 
 ///|
 /// 词法分析产生的内部记号。
@@ -149,10 +164,12 @@ fn lex(input : String) -> Result[Array[QueryToken], ParseError] {
 ///|
 /// 递归下降解析器的可变状态。
 ///
-/// 只保存记号数组与当前下标；下标允许修改，因为每一层解析都会消费记号。
+/// 只保存记号数组、当前下标与当前递归深度；下标允许修改，因为每一层
+/// 解析都会消费记号。`depth` 用于执行 `MAX_QUERY_DEPTH` 限制。
 priv struct QueryParser {
   tokens : Array[QueryToken]
   mut pos : Int32
+  mut depth : Int32
 }
 
 ///|
@@ -213,7 +230,22 @@ fn QueryParser::starts_unary(self : QueryParser) -> Bool {
 
 ///|
 /// OR 层：优先级最低，左结合。
+///
+/// 括号分组会递归回到这一层，因此深度检查放在这里：每进入一层
+/// 就加一，返回前再减一，无论成功还是失败都保证深度计数复原。
 fn QueryParser::parse_or(self : QueryParser) -> Result[Query, ParseError] {
+  if self.depth >= MAX_QUERY_DEPTH {
+    return Err(TooDeep)
+  }
+  self.depth = self.depth + 1
+  let result = self.parse_or_inner()
+  self.depth = self.depth - 1
+  result
+}
+
+///|
+/// OR 层的实际解析逻辑，由 `parse_or` 包裹深度计数。
+fn QueryParser::parse_or_inner(self : QueryParser) -> Result[Query, ParseError] {
   let mut left = match self.parse_and() {
     Ok(query) => query
     Err(error) => return Err(error)
@@ -253,14 +285,22 @@ fn QueryParser::parse_and(self : QueryParser) -> Result[Query, ParseError] {
 
 ///|
 /// NOT 层：一元前缀运算符，允许连续取反（NOT NOT a）。
+///
+/// 连续的 NOT 同样是递归，必须计入深度：`NOT NOT NOT … a` 会形成一条
+/// 与 NOT 个数等深的调用链，和括号嵌套一样需要上限保护。
 fn QueryParser::parse_not(self : QueryParser) -> Result[Query, ParseError] {
   if self.peek_is_not() {
-    self.advance()
-    let inner = match self.parse_not() {
-      Ok(query) => query
-      Err(error) => return Err(error)
+    if self.depth >= MAX_QUERY_DEPTH {
+      return Err(TooDeep)
     }
-    Ok(Not(inner))
+    self.advance()
+    self.depth = self.depth + 1
+    let inner = self.parse_not()
+    self.depth = self.depth - 1
+    match inner {
+      Ok(query) => Ok(Not(query))
+      Err(error) => Err(error)
+    }
   } else {
     self.parse_primary()
   }
@@ -310,7 +350,7 @@ pub fn parse_query(input : String) -> Result[Query, ParseError] {
   if tokens.is_empty() {
     return Err(EmptyQuery)
   }
-  let parser : QueryParser = { tokens, pos: 0, }
+  let parser : QueryParser = { tokens, pos: 0, depth: 0, }
   let query = match parser.parse_or() {
     Ok(query) => query
     Err(error) => return Err(error)

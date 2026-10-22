@@ -111,6 +111,44 @@ test "parser_reports_syntax_errors" {
 }
 
 ///|
+/// 生成 `count` 层括号包裹的查询，用于验证嵌套深度上限。
+fn nested_query(count : Int32, inner : String) -> String {
+  let builder = StringBuilder()
+  for _ in 0..<count {
+    builder.write_char('(')
+  }
+  builder.write_string(inner)
+  for _ in 0..<count {
+    builder.write_char(')')
+  }
+  builder.to_string()
+}
+
+///|
+/// 上限之内的嵌套应正常解析：10 层与 60 层都不改变语义。
+test "parser_accepts_reasonable_depth" {
+  assert_eq(canonical(nested_query(10, "moonbit")), "moonbit")
+  assert_true(@query.parse_query(nested_query(60, "moonbit")) is Ok(_))
+}
+
+///|
+/// 嵌套深度超过上限时必须给出明确错误，而不是耗尽调用栈后崩溃。
+///
+/// 两类递归都要覆盖：括号分组，以及连续 NOT 形成的前缀链。
+test "parser_rejects_excessive_depth" {
+  assert_eq(
+    canonical(nested_query(200, "moonbit")),
+    "!查询嵌套层级过深",
+  )
+  let builder = StringBuilder()
+  for _ in 0..<200 {
+    builder.write_string("NOT ")
+  }
+  builder.write_string("moonbit")
+  assert_eq(canonical(builder.to_string()), "!查询嵌套层级过深")
+}
+
+///|
 /// 单词项查询：命中所有包含该词项的文档，结果升序。
 test "execute_term_query" {
   let idx = sample_index()
