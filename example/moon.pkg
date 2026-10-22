@@ -1,0 +1,12 @@
+// example 包：可执行演示入口。
+//
+// 只依赖公开 API（根包的 Document + api 包的 SearchEngine），
+// 不直接接触索引、分词、评分、存储等内部包，验证门面设计是否足够好用。
+import {
+  "hc155-89/moontantivy",
+  "hc155-89/moontantivy/api",
+  "moonbitlang/x/fs",
+}
+
+// 声明本包包含 `moon run` 的入口。
+pkgtype(kind: "executable")
